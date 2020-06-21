@@ -1,0 +1,327 @@
+<html>
+<body>
+	<svg id="svgId" height="400" width="400" onClick="clickPixel(event)" style="font-family:monospace;font-size:large">
+		Sorry, your browser does not support inline SVG.
+	</svg>
+	<p id="state">0</p>
+	<p>---</p>
+	<p id="log">0</p>
+</body>
+<script>
+	var tape = []
+	for(var k=0; k<400; k++) {
+		tape.push(' ')
+	}
+	var head_location = 0
+	var state = "0"
+	createPixels()
+	function createPixels() {
+		var svg = document.getElementById("svgId")
+		for(var x=0; x<20; x++) {
+			for(var y=0; y<20; y++) {
+				var rect = document.createElementNS("http://www.w3.org/2000/svg","rect")
+				rect.setAttribute("id","pixel_"+x+"_"+y)
+				rect.setAttribute("x",x*20+"")
+				rect.setAttribute("y",y*20+"")
+				rect.setAttribute("width","20")
+				rect.setAttribute("height","20")
+				rect.setAttribute("style","fill:white;stroke:black;stroke-width:1")
+				svg.appendChild(rect)
+			}
+		}
+		var head = document.createElementNS("http://www.w3.org/2000/svg","rect")
+		head.setAttribute("id","head")
+		head.setAttribute("x","0")
+		head.setAttribute("y","0")
+		head.setAttribute("width","20")
+		head.setAttribute("height","20")
+		head.setAttribute("style","fill:none;stroke:red;stroke-width:3")
+		svg.appendChild(head)
+		for(var x=0; x<20; x++) {
+			for(var y=0; y<20; y++) {
+				var text = document.createElementNS("http://www.w3.org/2000/svg","text")
+				text.setAttribute("id","tape_"+x+"_"+y)
+				text.setAttribute("x",(x*20+5)+"")
+				text.setAttribute("y",(y*20+15)+"")
+				text.setAttribute("fill","black")
+				text.innerHTML = " "
+				svg.appendChild(text)
+			}
+		}
+	}
+	function setColorOnSquare(mode,index) {
+		var rows = 20
+		var cols = 20
+		var c = index%cols
+		var r = (index-c)/cols
+		if(mode=="blank") {
+			var color = "white"
+			var border = "black"
+			var stroke_width = "1"
+		} else if(mode=="highlighted") {
+			var color = "yellow"
+			var border = "black"
+			var stroke_width = "1"
+		} else if(mode=="head") {
+			var color = "white"
+			var border = "red"
+			var stroke_width = "3"
+		}
+		try {
+			document.getElementById("pixel_"+c+"_"+r).setAttribute("style","fill:"+color+";stroke:"+border+";stroke-width:"+stroke_width)
+		} catch(error) {
+			alert(error.message)
+		}
+	}
+	function setSymbolOnSquare(symbol,index) {
+		tape[index] = symbol
+		var rows = 20
+		var cols = 20
+		var c = index%cols
+		var r = (index-c)/cols
+		try {
+			var text = document.getElementById("tape_"+c+"_"+r)
+			text.innerHTML = symbol
+			if(symbol=='1') {
+				text.setAttribute("fill","red")
+			} else if(symbol=='0') {
+				text.setAttribute("fill","blue")
+			} else {
+				text.setAttribute("fill","black")
+			}
+		} catch(error) {
+			alert(error.message)
+		}
+	}
+	function moveLeft() {
+		if(head_location==0) {
+			state = "error"
+			alert("trying to move past left end of tape")
+			return
+		}
+		setHeadLocation(head_location-1)
+	}
+	function moveRight() {
+		if(head_location==399) {
+			state = "error"
+			alert("trying to move past right end of tape")
+		}
+		setHeadLocation(head_location+1)
+	}
+	function setHeadLocation(index) {
+		head_location = index
+		var rows = 20
+		var cols = 20
+		var c = index%cols
+		var r = (index-c)/cols
+		try {
+			document.getElementById("head")
+			head.setAttribute("x",c*20+"")
+			head.setAttribute("y",r*20+"")
+		} catch(error) {
+			alert(error.message)
+		}
+	}
+	var table1 = [ // print 1/3 in binary
+		['0','-','e','R','1'],
+		['1','-','e','R','2'],
+		['2','-','0','R','3'],
+		['3','-','-','R','4'],
+		['4','-','1','R','5'],
+		['5','-','-','R','2'],
+	]
+	var table2 = [ // print counting numbers in unary
+		['0','-','e','R','A1'],
+		['A1','-','e','R','A2'],
+		['A2','-','0','R','A3'],
+		['A3','-','-','R','A4'],
+		['A4','-','0','L','A5'],
+		['A5','-','-','L','B1'],
+		['B1','0','-','-','C1'],
+		['B1','1','-','R','B2'],
+		['B2','-','x','L','B3'],
+		['B3','-','-','L','B4'],
+		['B4','-','-','L','B1'],
+		['C1',' ','1','L','D1'],
+		['C1','-','-','R','C2'],
+		['C2','-','-','R','C1'],
+		['D1','x',' ','R','C1'],
+		['D1','e','-','R','E1'],
+		['D1',' ','-','L','D2'],
+		['D2','-','-','L','D1'],
+		['E1',' ','0','L','E2'],
+		['E2','-','-','L','B1'],
+		['E1','-','-','R','E3'],
+		['E3','-','-','R','E1'],
+	]
+	var table3 = [ // print square root of 2 in binary
+		['0','-','e','R','BEGIN 1                '],
+		['BEGIN 1                ','-','e','R','BEGIN 2                '],
+		['BEGIN 2                ','-','1','-','NEW 1                  '],
+		['NEW 1                  ','e','-','R','MARK-DIGITS 1          '],
+		['NEW 1                  ','-','-','L','NEW 1                  '],
+		['MARK-DIGITS 1          ','0','-','R','MARK-DIGITS 2          '],
+		['MARK-DIGITS 2          ','-','x','R','MARK-DIGITS 1          '],
+		['MARK-DIGITS 1          ','1','-','R','MARK-DIGITS 3          '],
+		['MARK-DIGITS 3          ','-','x','R','MARK-DIGITS 1          '],
+		['MARK-DIGITS 1          ',' ','-','R','MARK-DIGITS 4          '],
+		['MARK-DIGITS 4          ','-','z','R','MARK-DIGITS 5          '],
+		['MARK-DIGITS 5          ','-','-','R','MARK-DIGITS 6          '],
+		['MARK-DIGITS 6          ','-','r','-','FIND-X 1               '],
+		['FIND-X 1               ','x',' ','-','FIRST-R 1              '],
+		['FIND-X 1               ','e','-','-','FIND-DIGITS 1          '],
+		['FIND-X 1               ','-','-','L','FIND-X 2               '],
+		['FIND-X 2               ','-','-','L','FIND-X 1               '],
+		['FIRST-R 1              ','r','-','R','FIRST-R 2              '],
+		['FIRST-R 2              ','-','-','R','LAST-R 1               '],
+		['FIRST-R 1              ','-','-','R','FIRST-R 3              '],
+		['FIRST-R 3              ','-','-','R','FIRST-R 1              '],
+		['LAST-R 1               ','r','-','R','LAST-R 2               '],
+		['LAST-R 2               ','-','-','R','LAST-R 1               '],
+		['LAST-R 1               ',' ','r','R','LAST-R 3               '],
+		['LAST-R 3               ','-','-','R','LAST-R 4               '],
+		['LAST-R 4               ','-','r','-','FIND-X 1               '],
+		['FIND-DIGITS 1          ','e','-','R','FIND-DIGITS 2          '],
+		['FIND-DIGITS 2          ','-','-','R','FIND-1ST-DIGIT 1       '],
+		['FIND-DIGITS 1          ','-','-','L','FIND-DIGITS 3          '],
+		['FIND-DIGITS 3          ','-','-','L','FIND-DIGITS 1          '],
+		['FIND-1ST-DIGIT 1       ','x','-','L','FOUND-1ST-DIGIT 1      '],
+		['FIND-1ST-DIGIT 1       ','y','-','L','FOUND-1ST-DIGIT 1      '],
+		['FIND-1ST-DIGIT 1       ','z','-','L','FOUND-2ND-DIGIT 1      '],
+		['FIND-1ST-DIGIT 1       ',' ','-','R','FIND-1ST-DIGIT 2       '],
+		['FIND-1ST-DIGIT 2       ','-','-','R','FIND-1ST-DIGIT 1       '],
+		['FOUND-1ST-DIGIT 1      ','0','-','R','ADD-ZERO 1             '],
+		['FOUND-1ST-DIGIT 1      ','1','-','R','FOUND-1ST-DIGIT 2      '],
+		['FOUND-1ST-DIGIT 2      ','-','-','R','FOUND-1ST-DIGIT 3      '],
+		['FOUND-1ST-DIGIT 3      ','-','-','R','FIND-2ND-DIGIT 1       '],
+		['FIND-2ND-DIGIT 1       ','x','-','L','FOUND-2ND-DIGIT 1      '],
+		['FIND-2ND-DIGIT 1       ','y','-','L','FOUND-2ND-DIGIT 1      '],
+		['FIND-2ND-DIGIT 1       ',' ','-','R','FIND-2ND-DIGIT 2       '],
+		['FIND-2ND-DIGIT 2       ','-','-','R','FIND-2ND-DIGIT 1       '],
+		['FOUND-2ND-DIGIT 1      ','0','-','R','ADD-ZERO 1             '],
+		['FOUND-2ND-DIGIT 1      ','1','-','R','ADD-ONE 1              '],
+		['FOUND-2ND-DIGIT 1      ',' ','-','R','ADD-ONE 1              '],
+		['ADD-ZERO 1             ','r','s','-','ADD-FINISHED 1         '],
+		['ADD-ZERO 1             ','u','v','-','ADD-FINISHED 1         '],
+		['ADD-ZERO 1             ','-','-','R','ADD-ZERO 2             '],
+		['ADD-ZERO 2             ','-','-','R','ADD-ZERO 1             '],
+		['ADD-ONE 1              ','r','v','-','ADD-FINISHED 1         '],
+		['ADD-ONE 1              ','u','s','R','ADD-ONE 2              '],
+		['ADD-ONE 2              ','-','-','R','CARRY 1                '],
+		['ADD-ONE 1              ','-','-','R','ADD-ONE 3              '],
+		['ADD-ONE 3              ','-','-','R','ADD-ONE 1              '],
+		['CARRY 1                ','r','u','-','ADD-FINISHED 1         '],
+		['CARRY 1                ',' ','u','-','NEW-DIGIT-IS-ZERO 1    '],
+		['CARRY 1                ','u','r','R','CARRY 2                '],
+		['CARRY 2                ','-','-','R','CARRY 1                '],
+		['ADD-FINISHED 1         ','e','-','R','ADD-FINISHED 2         '],
+		['ADD-FINISHED 2         ','-','-','R','ERASE-OLD-X 1          '],
+		['ADD-FINISHED 1         ','-','-','L','ADD-FINISHED 3         '],
+		['ADD-FINISHED 3         ','-','-','L','ADD-FINISHED 1         '],
+		['ERASE-OLD-X 1          ','x',' ','L','ERASE-OLD-X 2          '],
+		['ERASE-OLD-X 2          ','-','-','L','PRINT-NEW-X 1          '],
+		['ERASE-OLD-X 1          ','z','y','L','ERASE-OLD-X 3          '],
+		['ERASE-OLD-X 3          ','-','-','L','PRINT-NEW-X 1          '],
+		['ERASE-OLD-X 1          ','-','-','R','ERASE-OLD-X 4          '],
+		['ERASE-OLD-X 4          ','-','-','R','ERASE-OLD-X 1          '],
+		['PRINT-NEW-X 1          ','e','-','R','PRINT-NEW-X 2          '],
+		['PRINT-NEW-X 2          ','-','-','R','ERASE-OLD-Y 1          '],
+		['PRINT-NEW-X 1          ','y','z','-','FIND-DIGITS 1          '],
+		['PRINT-NEW-X 1          ',' ','x','-','FIND-DIGITS 1          '],
+		['ERASE-OLD-Y 1          ','y',' ','L','ERASE-OLD-Y 2          '],
+		['ERASE-OLD-Y 2          ','-','-','L','PRINT-NEW-Y 1          '],
+		['ERASE-OLD-Y 1          ','-','-','R','ERASE-OLD-Y 3          '],
+		['ERASE-OLD-Y 3          ','-','-','R','ERASE-OLD-Y 1          '],
+		['PRINT-NEW-Y 1          ','e','-','R','NEW-DIGIT-IS-ONE 1     '],
+		['PRINT-NEW-Y 1          ','-','y','R','RESET-NEW-X 1          '],
+		['RESET-NEW-X 1          ',' ','-','R','RESET-NEW-X 2          '],
+		['RESET-NEW-X 2          ','-','x','-','FLAG-RESULT-DIGITS 1   '],
+		['RESET-NEW-X 1          ','-','-','R','RESET-NEW-X 3          '],
+		['RESET-NEW-X 3          ','-','-','R','RESET-NEW-X 1          '],
+		['FLAG-RESULT-DIGITS 1   ','s','t','R','FLAG-RESULT-DIGITS 2   '],
+		['FLAG-RESULT-DIGITS 2   ','-','-','R','UNFLAG-RESULT-DIGITS 1 '],
+		['FLAG-RESULT-DIGITS 1   ','v','w','R','FLAG-RESULT-DIGITS 3   '],
+		['FLAG-RESULT-DIGITS 3   ','-','-','R','UNFLAG-RESULT-DIGITS 1 '],
+		['FLAG-RESULT-DIGITS 1   ','-','-','R','FLAG-RESULT-DIGITS 4   '],
+		['FLAG-RESULT-DIGITS 4   ','-','-','R','FLAG-RESULT-DIGITS 1   '],
+		['UNFLAG-RESULT-DIGITS 1 ','s','r','R','UNFLAG-RESULT-DIGITS 2 '],
+		['UNFLAG-RESULT-DIGITS 2 ','-','-','R','UNFLAG-RESULT-DIGITS 1 '],
+		['UNFLAG-RESULT-DIGITS 1 ','v','u','R','UNFLAG-RESULT-DIGITS 3 '],
+		['UNFLAG-RESULT-DIGITS 3 ','-','-','R','UNFLAG-RESULT-DIGITS 1 '],
+		['UNFLAG-RESULT-DIGITS 1 ','-','-','-','FIND-DIGITS 1          '],
+		['NEW-DIGIT-IS-ZERO 1    ','e','-','R','PRINT-ZERO-DIGIT 1     '],
+		['NEW-DIGIT-IS-ZERO 1    ','-','-','L','NEW-DIGIT-IS-ZERO 1    '],
+		['PRINT-ZERO-DIGIT 1     ','0','-','R','PRINT-ZERO-DIGIT 2     '],
+		['PRINT-ZERO-DIGIT 2     ','-',' ','R','PRINT-ZERO-DIGIT 1     '],
+		['PRINT-ZERO-DIGIT 1     ','1','-','R','PRINT-ZERO-DIGIT 3     '],
+		['PRINT-ZERO-DIGIT 3     ','-',' ','R','PRINT-ZERO-DIGIT 1     '],
+		['PRINT-ZERO-DIGIT 1     ',' ','0','R','PRINT-ZERO-DIGIT 4     '],
+		['PRINT-ZERO-DIGIT 4     ','-','-','R','PRINT-ZERO-DIGIT 5     '],
+		['PRINT-ZERO-DIGIT 5     ','-','-','R','CLEANUP 1              '],
+		['NEW-DIGIT-IS-ONE 1     ','e','-','R','PRINT-ONE-DIGIT 1      '],
+		['NEW-DIGIT-IS-ONE 1     ','-','-','L','NEW-DIGIT-IS-ONE 1     '],
+		['PRINT-ONE-DIGIT 1      ','0','-','R','PRINT-ONE-DIGIT 2      '],
+		['PRINT-ONE-DIGIT 2      ','-',' ','R','PRINT-ONE-DIGIT 1      '],
+		['PRINT-ONE-DIGIT 1      ','1','-','R','PRINT-ONE-DIGIT 3      '],
+		['PRINT-ONE-DIGIT 3      ','-',' ','R','PRINT-ONE-DIGIT 1      '],
+		['PRINT-ONE-DIGIT 1      ',' ','1','R','PRINT-ONE-DIGIT 4      '],
+		['PRINT-ONE-DIGIT 4      ','-','-','R','PRINT-ONE-DIGIT 5      '],
+		['PRINT-ONE-DIGIT 5      ','-','-','R','CLEANUP 1              '],
+		['CLEANUP 1              ',' ','-','-','NEW 1                  '],
+		['CLEANUP 1              ','-',' ','R','CLEANUP 2              '],
+		['CLEANUP 2              ','-','-','R','CLEANUP 1              '],
+	]
+	var table = table3
+	var table_map = new Map()
+	for(var k=0; k<table.length; k++) {
+		row = table[k]
+		table_map.set(row[0]+","+row[1],[row[2],row[3],row[4]])
+	}
+	function transition() {
+		var rule = table_map.get(state+","+tape[head_location])
+		if(rule===undefined) {
+			rule = table_map.get(state+",-")
+		}
+		if(rule==undefined) {
+			alert("undefined state \""+state+"\" for symbol \""+tape[head_location]+"\"")
+			state = "error"
+			return
+		}
+		symbol_written = rule[0]
+		move_head = rule[1]
+		final_state = rule[2]
+		if(symbol_written!='-') {
+			setSymbolOnSquare(symbol_written,head_location)
+		}
+		if(move_head=='L') {
+			moveLeft()
+		} else if(move_head=='R') {
+			moveRight()
+		}
+		if(state!='error') {
+			state = final_state
+		}
+	}
+	clock()
+	function clock() {
+		transition()
+		if(state!="error") {
+			document.getElementById("state").innerHTML = state
+			//document.getElementById("log").innerHTML = document.getElementById("log").innerHTML+"<br/>"+state
+			setTimeout(clock, 0.001*1000)
+		}
+	}
+/* TODO:
+	log all transitions for review and debugging
+	display list of rules with active rule highlighted
+	controllable speed, including pausing and moving forward by one step
+	rewind, jump to numbered step, jump to soonest invocation of rule
+	display current step number
+	internal validations (legal states, numbers/letters where they belong, no gaps, etc)
+	put this on github pages
+	add explanatory text - The Animated Annotated Turing
+	find out how to convert svg animation into gif or mp4
+	automatically compile skeleton table into full table
+*/
+</script>
+</html>
